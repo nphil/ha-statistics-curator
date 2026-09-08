@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# CI workflow is kept out of git: the session token lacks the `workflow` scope.
+# Add it with a PAT that has it: git add -f .github/workflows/validate.yml

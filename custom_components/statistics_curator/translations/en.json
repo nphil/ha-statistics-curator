@@ -1,0 +1,66 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Statistics Curator",
+        "description": "Statistics Curator watches registry changes so it can safely settle orphaned long-term statistics. Confirm to enable it."
+      }
+    },
+    "abort": {
+      "already_configured": "Statistics Curator is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Statistics Curator options",
+        "description": "Saving changes reloads Statistics Curator before the new policy takes effect.",
+        "data": {
+          "clear_disabled": "Clear disabled entities",
+          "migrate_successors": "Migrate exact successors",
+          "clear_deleted": "Clear witnessed deletions",
+          "clear_unwitnessed": "Clear unwitnessed orphans",
+          "debounce_seconds": "Wait before curating",
+          "dismiss_spook_issue": "Dismiss the Spook repair"
+        },
+        "data_description": {
+          "clear_disabled": "Clear orphaned statistics when their entity still exists but is disabled. This house rule is enabled by default.",
+          "migrate_successors": "Move history only when the removed entity's exact domain, platform, and unique ID reappear under a new entity ID.",
+          "clear_deleted": "Clear statistics only when this integration witnessed the entity's removal and its recorded device no longer exists.",
+          "clear_unwitnessed": "Clear statistics whose removal was never observed. This is unsafe by default because nothing proves the original device is gone.",
+          "debounce_seconds": "Delay after Spook raises its orphaned-statistics repair before acting. Set 0 to act immediately.",
+          "dismiss_spook_issue": "After a clean pass, reload Spook so it can retire its repair. Disable this to leave the repair open."
+        }
+      }
+    }
+  },
+  "issues": {
+    "id_reused": {
+      "title": "Mixed statistics under {statistic_id}",
+      "description": "`{statistic_id}` belonged to `{platform}` / `{unique_id}`, which was removed, and a different entity later took that id. The history under it now mixes two devices and will not be migrated or cleared automatically. Fix clears it.",
+      "fix_flow": {
+        "abort": {
+          "not_loaded": "Statistics Curator is not loaded. Reload the integration and try again."
+        },
+        "step": {
+          "confirm": {
+            "title": "Clear the mixed statistics",
+            "description": "`{statistic_id}` belonged to `{platform}` / `{unique_id}`, which was removed, and a different entity later took that id. Rows are bucketed, so the two devices' data share at least the bucket that was open at the removal: this history can no longer be attributed to either of them and will not be migrated or cleared automatically.\n\nSubmit to clear every long-term and 5-minute statistic under `{statistic_id}`. This cannot be undone. (Clearing it from Settings → Tools → Statistics instead also works; this repair goes away within the hour.)"
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "curate": {
+      "name": "Curate orphaned statistics",
+      "description": "Settle long-term statistics with no live entity, then let Spook re-check.",
+      "fields": {
+        "clear_unwitnessed": {
+          "name": "Clear unwitnessed orphans",
+          "description": "Also clear orphans whose removal this integration did not see."
+        }
+      }
+    }
+  }
+}

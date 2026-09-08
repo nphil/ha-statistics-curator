@@ -1,0 +1,17 @@
+curate:
+  name: Curate orphaned statistics
+  description: >-
+    Settle long-term statistics with no live entity: clear those whose entity and
+    device were seen being deleted (or whose entity is disabled), migrate those
+    whose entity came back under a new id, report the rest, and dismiss Spook's
+    repair when nothing is left. Runs automatically whenever Spook raises the
+    repair; call it by hand to re-run.
+  fields:
+    clear_unwitnessed:
+      name: Clear unwitnessed orphans
+      description: >-
+        Also clear orphans whose removal this integration did not see (for
+        example, statistics left behind before it was installed). Off by default
+        because nothing proves those devices are gone.
+      selector:
+        boolean:

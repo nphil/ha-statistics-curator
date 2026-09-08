@@ -1,0 +1,14 @@
+{
+  "domain": "statistics_curator",
+  "name": "Statistics Curator",
+  "version": "1.0.0",
+  "codeowners": ["@nphil"],
+  "config_flow": true,
+  "single_config_entry": true,
+  "dependencies": ["recorder"],
+  "after_dependencies": ["spook"],
+  "documentation": "https://github.com/nphil/ha-statistics-curator",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "requirements": []
+}
