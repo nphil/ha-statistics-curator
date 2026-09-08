@@ -14,6 +14,7 @@
   "documentation": "https://github.com/nphil/ha-statistics-curator",
   "integration_type": "service",
   "iot_class": "calculated",
+  "issue_tracker": "https://github.com/nphil/ha-statistics-curator/issues",
   "requirements": [],
   "single_config_entry": true,
   "version": "1.0.0"
