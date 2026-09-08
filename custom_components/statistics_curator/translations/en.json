@@ -37,7 +37,6 @@
   "issues": {
     "id_reused": {
       "title": "Mixed statistics under {statistic_id}",
-      "description": "`{statistic_id}` belonged to `{platform}` / `{unique_id}`, which was removed, and a different entity later took that id. The history under it now mixes two devices and will not be migrated or cleared automatically. Fix clears it.",
       "fix_flow": {
         "abort": {
           "not_loaded": "Statistics Curator is not loaded. Reload the integration and try again."
