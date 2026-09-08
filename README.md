@@ -8,7 +8,7 @@ Assistant itself only lets you clear one row at a time.
 
 It never guesses. Every action is backed by something it watched happen.
 
-[![hacs][hacs-badge]][hacs] [![release][release-badge]][releases]
+[![hacs][hacs-badge]][hacs] [![release][release-badge]][releases] [![validate][validate-badge]][validate]
 
 ## Why this exists
 
@@ -141,3 +141,5 @@ MIT © nphil
 [release-badge]: https://img.shields.io/github/v/release/nphil/ha-statistics-curator
 [releases]: https://github.com/nphil/ha-statistics-curator/releases
 [spook]: https://spook.boo
+[validate]: https://github.com/nphil/ha-statistics-curator/actions/workflows/validate.yml
+[validate-badge]: https://github.com/nphil/ha-statistics-curator/actions/workflows/validate.yml/badge.svg
