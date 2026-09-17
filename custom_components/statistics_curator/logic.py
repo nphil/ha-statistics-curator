@@ -191,11 +191,17 @@ class Orphan:
     successor_id: str | None
 
 
+REASON_UNWITNESSED = "unwitnessed"
+
+
 @dataclass(frozen=True, slots=True)
 class Decision:
     verb: Literal["clear", "migrate", "skip"]
     action: Action
     detail: str
+    # Machine-readable why, for the caller's own reporting. Only set where
+    # the caller acts on it; the prose in ``detail`` is for humans.
+    reason: str = ""
 
 
 def decide(orphan: Orphan, options: CuratorOptions) -> Decision:
@@ -228,8 +234,10 @@ def decide(orphan: Orphan, options: CuratorOptions) -> Decision:
         return Decision(
             "skip",
             LEFT_ALONE,
-            "its removal was not witnessed, so nothing proves the device is gone; clear it from "
-            "Settings → Tools → Statistics, or run `statistics_curator.curate` with `clear_unwitnessed: true`",
+            "its removal was not witnessed, so nothing proves the device is gone; a repair now "
+            "offers to clear it, or switch on the `" + OPTION_CLEAR_UNWITNESSED + "` option to "
+            "clear such orphans without asking",
+            REASON_UNWITNESSED,
         )
 
     identity = f"`{rec['platform']}` / `{rec['unique_id']}`"

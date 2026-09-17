@@ -20,9 +20,11 @@ removal was witnessed, because the registry forgets the identity and device
 the moment the entity is gone or re-created. This integration therefore
 records every removal as it happens (identity + device) and acts only on that
 evidence. It never guesses from names or units, and it never clears history
-it did not see being deleted: an orphan with no removal record is reported and
-left in place (the ``curate`` service accepts ``clear_unwitnessed: true`` for
-the operator to settle those deliberately).
+it did not see being deleted on its own: an orphan with no removal record is
+raised as a fixable repair offering to clear it, so the decision is the
+operator's and takes one click (the ``curate`` service accepts
+``clear_unwitnessed: true``, and the option of the same name switches the
+asking off, for settling such history in bulk).
 
 Anything else it cannot settle safely is reported in the notification and
 left for the operator, and Spook's repair stays open until nothing is left:
@@ -75,7 +77,17 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util.dt import utcnow
 
 from . import logic
-from .logic import LEFT_ALONE, MIGRATED, Action, Orphan, Record, Records, Series
+from .logic import (
+    CLEARED,
+    LEFT_ALONE,
+    MIGRATED,
+    REASON_UNWITNESSED,
+    Action,
+    Orphan,
+    Record,
+    Records,
+    Series,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,6 +100,7 @@ SPOOK_ISSUE_ID = "orphaned_statistics_orphaned_statistics"
 ORPHAN_ISSUE_TYPE = "no_state"
 
 REUSED_ISSUE_PREFIX = "id_reused_"
+UNWITNESSED_ISSUE_PREFIX = "unwitnessed_"
 
 NOTIFICATION_ID = "statistics_curator"
 NOTIFICATION_TITLE = "Statistics curator"
@@ -158,6 +171,37 @@ class Curator:
             if domain == DOMAIN and issue_id.startswith(REUSED_ISSUE_PREFIX) and issue_id not in flagged:
                 ir.async_delete_issue(self.hass, DOMAIN, issue_id)
                 _LOGGER.debug("Retired %s: no removal record backs it any more", issue_id)
+
+    @callback
+    def _reconcile_unwitnessed_issues(self, unwitnessed: set[str]) -> None:
+        """Offer a Fix for each unwitnessed orphan, and only those.
+
+        Clearing such a series is the operator's call — nothing proves the
+        device is gone — so the repair asks instead of the pass deciding.
+        Raising is idempotent, and any offer whose orphan has since been
+        settled (cleared by hand, entity back, option switched on) is
+        withdrawn here, because these repairs are persistent.
+        """
+        for statistic_id in sorted(unwitnessed):
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                UNWITNESSED_ISSUE_PREFIX + statistic_id,
+                is_fixable=True,
+                is_persistent=True,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="unwitnessed_orphan",
+                translation_placeholders={"statistic_id": statistic_id},
+            )
+        offered = {UNWITNESSED_ISSUE_PREFIX + s for s in unwitnessed}
+        for (domain, issue_id) in list(ir.async_get(self.hass).issues):
+            if (
+                domain == DOMAIN
+                and issue_id.startswith(UNWITNESSED_ISSUE_PREFIX)
+                and issue_id not in offered
+            ):
+                ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+                _LOGGER.debug("Withdrew %s: it is no longer an unwitnessed orphan", issue_id)
 
     @callback
     def _save(self) -> None:
@@ -301,6 +345,7 @@ class Curator:
         await self._async_prune_records()
         orphans = await self._async_orphans()
         if not orphans:
+            self._reconcile_unwitnessed_issues(set())
             await self._async_resolve_spook_issue()
             return []
 
@@ -310,6 +355,7 @@ class Curator:
         ]
 
         results: list[Result] = []
+        unwitnessed: set[str] = set()
         for statistic_id in orphans:
             entry = registry.async_get(statistic_id)
             rec = self.removed.get(statistic_id)
@@ -331,12 +377,15 @@ class Curator:
                 result = (statistic_id, decision.action, decision.detail)
             else:
                 result = (statistic_id, decision.action, decision.detail)
+                if decision.reason == REASON_UNWITNESSED:
+                    unwitnessed.add(statistic_id)
 
             if result[1] != LEFT_ALONE and rec is not None:
                 self.removed.pop(statistic_id, None)
                 self._save()
             results.append(result)
 
+        self._reconcile_unwitnessed_issues(unwitnessed)
         for statistic_id, action, detail in results:
             _LOGGER.info("%s %s: %s", action, statistic_id, detail)
         remaining = await self._async_orphans()
@@ -355,9 +404,55 @@ class Curator:
             _LOGGER.info("cleared %s: mixed series cleared on operator request via Repairs", statistic_id)
             self._notify([(statistic_id, "cleared", "mixed series cleared on operator request via Repairs")])
 
+    async def async_clear_unwitnessed(self, statistic_id: str) -> None:
+        """The unwitnessed-orphan repair's Fix: clear the series it offered.
+
+        There is no removal record to retire here by definition, so this only
+        clears, drops the offer, and lets Spook look again.
+        """
+        async with self._lock:
+            await self._async_clear(statistic_id)
+            ir.async_delete_issue(
+                self.hass, DOMAIN, UNWITNESSED_ISSUE_PREFIX + statistic_id
+            )
+            detail = "unwitnessed orphan cleared on operator request via Repairs"
+            _LOGGER.info("cleared %s: %s", statistic_id, detail)
+            remaining = await self._async_orphans()
+            if not remaining:
+                await self._async_resolve_spook_issue()
+            self._notify([(statistic_id, CLEARED, detail)], remaining)
+
     async def async_prune(self) -> None:
         async with self._lock:
             await self._async_prune_records()
+            await self._async_prune_unwitnessed_offers()
+
+    async def _async_prune_unwitnessed_offers(self) -> None:
+        """Withdraw offers whose series is gone.
+
+        Clearing a statistic from Settings → Tools → Statistics fires no
+        event, so an offer taken up that way is only noticed here.
+        """
+        offers = [
+            issue_id.removeprefix(UNWITNESSED_ISSUE_PREFIX)
+            for (domain, issue_id) in ir.async_get(self.hass).issues
+            if domain == DOMAIN and issue_id.startswith(UNWITNESSED_ISSUE_PREFIX)
+        ]
+        if not offers:
+            return
+        instance = get_instance(self.hass)
+        metas = await instance.async_add_executor_job(
+            partial(get_metadata, self.hass, statistic_ids=set(offers))
+        )
+        for statistic_id in offers:
+            if statistic_id not in metas:
+                ir.async_delete_issue(
+                    self.hass, DOMAIN, UNWITNESSED_ISSUE_PREFIX + statistic_id
+                )
+                _LOGGER.debug(
+                    "Withdrew the offer for %s: nothing is recorded under it any more",
+                    statistic_id,
+                )
 
     async def _async_prune_records(self) -> None:
         """Forget removals with no statistics left; see ``logic.prunable``.

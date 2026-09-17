@@ -27,7 +27,7 @@
           "clear_disabled": "Clear orphaned statistics when their entity still exists but is disabled. This house rule is enabled by default.",
           "migrate_successors": "Move history only when the removed entity's exact domain, platform, and unique ID reappear under a new entity ID.",
           "clear_deleted": "Clear statistics only when this integration witnessed the entity's removal and its recorded device no longer exists.",
-          "clear_unwitnessed": "Clear statistics whose removal was never observed. This is unsafe by default because nothing proves the original device is gone.",
+          "clear_unwitnessed": "Clear statistics whose removal was never observed, without asking. Off by default: nothing proves the original device is gone, so each one is offered as a repair you can accept instead.",
           "debounce_seconds": "Delay after Spook raises its orphaned-statistics repair before acting. Set 0 to act immediately.",
           "dismiss_spook_issue": "After a clean pass, reload Spook so it can retire its repair. Disable this to leave the repair open."
         }
@@ -45,6 +45,20 @@
           "confirm": {
             "title": "Clear the mixed statistics",
             "description": "`{statistic_id}` belonged to `{platform}` / `{unique_id}`, which was removed, and a different entity later took that id. Rows are bucketed, so the two devices' data share at least the bucket that was open at the removal: this history can no longer be attributed to either of them and will not be migrated or cleared automatically.\n\nSubmit to clear every long-term and 5-minute statistic under `{statistic_id}`. This cannot be undone. (Clearing it from Settings → Tools → Statistics instead also works; this repair goes away within the hour.)"
+          }
+        }
+      }
+    },
+    "unwitnessed_orphan": {
+      "title": "Orphaned statistics under {statistic_id}",
+      "fix_flow": {
+        "abort": {
+          "not_loaded": "Statistics Curator is not loaded. Reload the integration and try again."
+        },
+        "step": {
+          "confirm": {
+            "title": "Clear the orphaned statistics",
+            "description": "Nothing in Home Assistant provides `{statistic_id}` any more: it has no entity, and this integration never saw that entity being removed — so it was deleted before Statistics Curator was installed, or its integration dropped it. Nothing proves the device is really gone, which is why this history is not cleared on its own.\n\nSubmit to clear every long-term and 5-minute statistic under `{statistic_id}`. This cannot be undone. If the device is coming back, ignore this repair instead and the history will be reattached when the entity returns under the same id."
           }
         }
       }

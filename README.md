@@ -84,12 +84,27 @@ services → Statistics Curator → **Configure**:
 | Clear statistics of disabled entities | on | A disabled entity keeps no history; clear it |
 | Migrate to a renamed successor | on | Move history when the same device returns under a new entity id |
 | Clear history of deleted devices | on | Clear when both the entity and its device are gone |
-| Clear orphans that were never witnessed | **off** | History predating this integration, or removals it did not see. Nothing proves those devices are gone — leave it off unless you know |
+| Clear orphans that were never witnessed | **off** | History predating this integration, or removals it did not see. Nothing proves those devices are gone, so each one is offered as a repair with a **Fix** button instead; switch this on to clear them without asking |
 | Delay before acting | 30 s | Settling time after Spook raises its repair, so a device being re-paired is not mistaken for a deletion |
 | Let Spook retire its repair | on | Reload Spook so its own re-check clears the issue |
 
 Turning an option off does not hide the orphan: it is still reported, with the
 reason it was left alone.
+
+### Repairs
+
+Two things cannot be settled from evidence, so they are raised under Settings →
+Repairs with a Fix button that clears the series after one confirmation:
+
+- **Mixed statistics** — the id was reused, so the history belongs to two
+  devices and can be attributed to neither.
+- **Orphaned statistics** — nothing provides the id and the removal was never
+  witnessed (deleted before this integration existed, or dropped by its own
+  integration). Ignore the repair if the device is coming back: the history is
+  reattached when the entity returns under the same id.
+
+Either repair is withdrawn on its own if you clear the series from Settings →
+Tools → Statistics instead, or if the orphan settles some other way.
 
 ### Service
 
@@ -109,7 +124,7 @@ orphaned statistic
    ├─ exact identity live under a new id ────► migrate (rename, or safe merge)
    ├─ removal witnessed, device also gone ───► clear
    ├─ removal witnessed, device still here ──► leave alone, ask you to delete it
-   └─ removal never witnessed ───────────────► leave alone (unless you opt in)
+   └─ removal never witnessed ───────────────► leave alone + offer to clear
 ```
 
 Removal evidence lives in `.storage/statistics_curator.removed_entities`:

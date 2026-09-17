@@ -25,6 +25,7 @@ from logic import (  # noqa: E402
     CLEARED,
     LEFT_ALONE,
     MIGRATED,
+    REASON_UNWITNESSED,
     CuratorOptions,
     Orphan,
     Series,
@@ -175,6 +176,22 @@ def test_default_policy_leaves_an_unwitnessed_orphan_alone():
     d = decide(orphan(), DEFAULT_OPTIONS)
     assert (d.verb, d.action) == ("skip", LEFT_ALONE)
     assert "not witnessed" in d.detail
+
+
+def test_only_the_unwitnessed_skip_is_marked_for_a_repair_offer():
+    # The caller raises its "clear this?" repair from this reason, so no other
+    # skip may carry it: an enabled entity between reloads, or a series two
+    # entities wrote to, must not be offered up for deletion.
+    assert decide(orphan(), DEFAULT_OPTIONS).reason == REASON_UNWITNESSED
+    assert decide(orphan(), CuratorOptions(clear_unwitnessed=True)).reason == ""
+    assert decide(orphan(registered=True), DEFAULT_OPTIONS).reason == ""
+    assert (
+        decide(orphan(record=removed(id_reused=True)), DEFAULT_OPTIONS).reason == ""
+    )
+    assert (
+        decide(orphan(record=removed(), device_exists=True), DEFAULT_OPTIONS).reason
+        == ""
+    )
 
 
 def test_witnessed_removal_with_device_gone_is_cleared():
