@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Statistics Curator">
+  <title>Statistics Curator</title>
+  <!-- Same geometry as tools/render_brand.py (light variant). -->
+  <rect width="256" height="256" rx="56" fill="#254BE8"/>
+  <g fill="#FFFFFF">
+    <!-- three statistics bars on one baseline -->
+    <rect x="40" y="144" width="48" height="64" rx="12"/>
+    <rect x="104" y="112" width="48" height="96" rx="12"/>
+    <rect x="168" y="128" width="48" height="80" rx="12"/>
+    <!-- stale history crumbling off the first bar -->
+    <rect x="40" y="114" width="16" height="16" rx="5"/>
+    <rect x="62" y="96" width="12" height="12" rx="4"/>
+    <rect x="80" y="78" width="9" height="9" rx="3"/>
+  </g>
+  <!-- the curator's tick: the rest is settled -->
+  <polyline points="136,66 158,88 202,40" fill="none" stroke="#FFB82E" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
