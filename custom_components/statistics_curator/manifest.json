@@ -4,6 +4,9 @@
   "after_dependencies": [
     "spook"
   ],
+  "categories": [
+    "computers_network.cloud_developer_tools"
+  ],
   "codeowners": [
     "@nphil"
   ],
@@ -17,5 +20,5 @@
   "issue_tracker": "https://github.com/nphil/ha-statistics-curator/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "1.1.1"
+  "version": "1.1.2"
 }

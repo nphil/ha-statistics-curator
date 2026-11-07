@@ -140,11 +140,15 @@ remain under their id.
 ## Development
 
 Decisions live in `custom_components/statistics_curator/logic.py` as pure
-functions with no Home Assistant imports, so they are testable without a Core
-checkout:
+functions with no Home Assistant imports. The tests run under the harness that
+ships with Home Assistant core (`pytest-homeassistant`, versioned like Home
+Assistant itself). `tests/test_logic.py` covers the decisions;
+`tests/test_integration.py` sets the integration up against a real recorder.
+CI runs both against Home Assistant stable and beta every week:
 
 ```bash
-python3 -m pytest tests
+pip install "pytest-homeassistant[bluetooth]"
+python3 -m pytest
 ```
 
 ## Licence
